@@ -2,7 +2,7 @@
 title: "Regression Models Class Project (JHU via Coursera) - July 2014"
 author: "Leif Ulstrup"
 date: "July 22, 2014"
-output: html_document
+output: word_document
 ---
 
 ##Executive Summary
@@ -39,24 +39,24 @@ The exploratory data analysis below explores the relationship between MPG and tr
 
 The most striking diagram "MPG vs HP" seems to show that manual transmission cars are on a trend line of ~4 MPG superior performance when horsepower is the assumed factor affecting MPG; however, the data is limited and high horsepower manual transmission cars are relatively low weight cars (sports cars) vs. the automatic transmission set.
 
-The 13 of 32 manual transmission cars average 24.39 mpg (with a standard deviation of 6.17) vs the automatics which are 19 of 32 cars and average 17.15 mpg (with a standard deviation of 3.834); however, it is also easy to see on the MPG vs Weight chart that the majority of the manual transmission cars are the much lighter cars.  11 of the 13 manual transmission cars are below 3000 lbs while only 1 of the 19 automatic cars is below 3000 lbs.  The MPG vs Weight trend lines would lead one to the conclusion that manual transmissions have much worse mpg than automatic for cars above 3000 lbs but again there are only 2 of 13 data points in that region.  The 95% (t-test) intervals for automatic is 8.7 mpg to 25.59 mpg and manual is 10.82 mpg to 38.0 mpg.  The mean weight of the manual transmission cars is 64% of the automatic cars.
+A simple linear regression on transmission type (am) as a predictor only explains 36% of the MPG difference (R^2) and has a slope confidence interval that is very broad (from 3.6 to 10.9) while weight (wt) explains 75%, hp explains 60%, and weight + hp + wt * hp explains 89% of the MPG prediction.  Adding the transmission type has no effect and has a p-value of .93.
 
 The exporatory data analysis below explains the process used to evaluate mtcars.
-
-
+```{r loadcar, echo=FALSE}
+require(car) # this package includes the function scatterplot() which is useful for the visuals below
+```
 ##Exploratory Data Analysis (Including Appendix of Figures)
 
+```{r eda, echo=FALSE}
 
-```{r eda, echo=TRUE}
 
-require(car) # this package includes the function scatterplot() which is useful for the visuals below
 
 require(graphics)
 
 data(mtcars) # confirm this is refreshed
 
 # do a quick check of the relationships using the pairs() function to display
-pairs(mtcars, main = "mtcars data")
+#pairs(mtcars, main = "mtcars data")
 
 # do basic analysis on the data set
 autoMeanMPG <- mean(mtcars[mtcars$am == 0,]$mpg)  # am=0 automatic transmission
@@ -74,17 +74,18 @@ wtMeanmanual <- mean(mtcars[mtcars$am == 1,]$wt)
 manualWTtoautoWTratio <- wtMeanmanual/wtMeanauto
 
 # dive in and start looking at relationships visually
-scatterplot(mpg ~ wt | am, data=mtcars, xlab="Weight (lb/1000)", ylab="Miles Per Gallon", main="MPG vs Weight\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+
+scatterplot(mpg ~ wt | am, data=mtcars, xlab="Weight (lb/1000)", ylab="Miles Per Gallon", main="MPG vs Weight\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE, cex = 0.5)
 
 scatterplot(mpg ~ hp | am, data=mtcars, xlab="Horsepower", ylab="Miles Per Gallon", main="MPG vs HP\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
 
-scatterplot(hp ~ wt | am, data=mtcars, xlab="Weight (lb/1000)", ylab="Horsepower", main="HP vs Weight\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+#scatterplot(hp ~ wt | am, data=mtcars, xlab="Weight (lb/1000)", ylab="Horsepower", main="HP vs Weight\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
 
-scatterplot(qsec ~ hp | am, data=mtcars, xlab="Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs HP\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+#scatterplot(qsec ~ hp | am, data=mtcars, xlab="Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs HP\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
 
 mtcars$powerRatio <- mtcars$wt*1000/mtcars$hp
 
-scatterplot(qsec ~ powerRatio | am, data=mtcars, xlab="Weight (lbs)/Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs Power Ratio\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=TRUE)
+#scatterplot(qsec ~ powerRatio | am, data=mtcars, xlab="Weight (lbs)/Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs Power Ratio\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=TRUE)
 
 
 #
@@ -97,53 +98,68 @@ mtcars$HPestimate <- (mtcars$wt*1000)/(mtcars$qsec/7.3571)^3.885
 mtcars$HPestimateToActualHPRatio <- mtcars$HPestimate/mtcars$hp
 
 #test transmission type (am) as a predictor
-summary(fitam <- lm(mpg ~ am, data=mtcars))
-confint(fitam)
+#summary(fitam <- lm(mpg ~ am, data=mtcars))
+#confint(fitam)
 
 # test weight (wt) as the best predictor of MPG
-summary(model1auto <- lm(mpg ~ wt, data=mtcars[mtcars$am==0,])) # test manual relationship to weight
-confint(model1auto)
-summary(model1manual <- lm(mpg ~ wt, data=mtcars[mtcars$am==1,])) # test automatic relationship to weight
-confint(model1manual)
-summary(model1 <- lm(mpg ~ wt, data=mtcars))
-confint(model1)
+#summary(model1auto <- lm(mpg ~ wt, data=mtcars[mtcars$am==0,])) # test manual relationship to weight
+#confint(model1auto)
+#summary(model1manual <- lm(mpg ~ wt, data=mtcars[mtcars$am==1,])) # test automatic relationship to weight
+#confint(model1manual)
+#summary(model1 <- lm(mpg ~ wt, data=mtcars))
+#confint(model1)
 #plot(mtcars$wt, model1$residuals)
 #abline(h=0)
-par(mfrow=c(2,2))
-plot(model1)
+#par(mfrow=c(2,2))
+#plot(model1)
 
 #test horsepower(hp) as the best predictor of MPG
-summary(model2auto <- lm(mpg ~ hp, data=mtcars[mtcars$am==0,])) # test manual relationship to hp
-confint(model2auto)
-summary(model2manual <- lm(mpg ~ hp, data=mtcars[mtcars$am==1,])) # test automatic relationship to hp
-confint(model2manual)
-summary(model2 <- lm(mpg ~ hp, data=mtcars))
-confint(model2)
+#summary(model2auto <- lm(mpg ~ hp, data=mtcars[mtcars$am==0,])) # test manual relationship to hp
+#confint(model2auto)
+#summary(model2manual <- lm(mpg ~ hp, data=mtcars[mtcars$am==1,])) # test automatic relationship to hp
+#confint(model2manual)
+#summary(model2 <- lm(mpg ~ hp, data=mtcars))
+#confint(model2)
 #plot(mtcars$hp, model2$residuals)
 #abline(h=0)
-par(mfrow=c(2,2))
-plot(model2)
+#par(mfrow=c(2,2))
+#plot(model2)
 
 # source "R in Action" by Robert Kabacoff, page 186-188
 # recommends that one explore the interrelationship between wt and hp together as a factor
 # so...
+
+```
+```{r loadeffects, echo=FALSE}
+require(effects) # use this at the end
+```
+```{r final, echo=FALSE}
+
 fithpANDwt <- lm(mpg ~ hp + wt + hp:wt + am, data = mtcars)
 summary(fithpANDwt)
 confint(fithpANDwt)
+par(mfrow=c(2,2))
+plot(fithpANDwt)
 
-require(effects)
-plot(effect("hp:wt", fithpANDwt,list(wt=c(2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0))), multiline=TRUE)
+
+
+plot(effect("hp:wt", fithpANDwt,list(wt=c(2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0))), multiline=TRUE, cex = 0.5)
 
 ```
 
-##Conclusions
-
+---
 There are clearly different MPG performance characteristics between the cars with manual vs automatic transmission as evidenced by the graphs and trend lines; however, there are several issues with the data (e.g., manual transmissions are mostly on the lightest cars with presumably less rolling friction and smaller drag area cross sections).  The MPG vs HP graph seems to show that the manual transmissions have as good or better mpg than their equivalent HP automatic comparisons, but the confidence level is very low once you add the weight and weight * hp factors.
 
-A simple linear regression on transmission type (am) as a predictor only explains 36% of the MPG difference (R^2) and has a slope confidence interval that is very broad (from 3.6 to 10.9) while weight (wt) explains 75%, hp explains 60%, and weight + hp + wt * hp explains 89% of the MPG prediction.  Adding the transmission type has no effect and has a p-value of .93.
 
-####For Fun - Analysis of This Question Using Modern Car Capabilities
+The 13 of 32 manual transmission cars average 24.39 mpg (with a standard deviation of 6.17) vs the automatics which are 19 of 32 cars and average 17.15 mpg (with a standard deviation of 3.834); however, it is also easy to see on the MPG vs Weight chart that the majority of the manual transmission cars are the much lighter cars.  11 of the 13 manual transmission cars are below 3000 lbs while only 1 of the 19 automatic cars is below 3000 lbs.  The MPG vs Weight trend lines would lead one to the conclusion that manual transmissions have much worse mpg than automatic for cars above 3000 lbs but again there are only 2 of 13 data points in that region.  The 95% (t-test) intervals for automatic is 8.7 mpg to 25.59 mpg and manual is 10.82 mpg to 38.0 mpg.  The mean weight of the manual transmission cars is 64% of the automatic cars.
+
+
+A simple linear regression on transmission type (am) as a predictor only explains 36% of the MPG difference (R^2) and has a slope confidence interval that is very broad (from 3.6 to 10.9) while weight (wt) explains 75%, hp explains 60%, and weight + hp + wt * hp explains 89% of the MPG prediction.  Adding the transmission type has no effect and has a p-value of .93.
+---
+---
+For Fun - Answering This Question Today
 
 This question about whether manual or automatic transmissions provide superior MPG and other advantages continues to this day.  Most car analysts suggest that very sophisticated modern day automatic transmissions (especially "continuous variable") are as good are even better than manual transmissions for fuel economy.  There is a funny version of this discussion with the famous "Frick and Frack Brothers Car Talk Series on NPR" dated 8/21/12 and located here: http://www.cartalk.com/content/today-manual-transmission-myths-debunked .  Here is another source that shows that it is a toss up also though the title indicates otherwise:  http://www.consumerreports.org/cro/2012/01/save-gas-and-money-with-a-manual-transmission/index.htm
 
 Here is another reference exploring statistical analysis of a broad range of automobile performance characteristics starting with regression analysis from the 1950's to today.  The analysis does not explore the automatic vs. manual discussion but does look at the ratios between quarter mile time, quarter mile MPH, weight, horsepower, Power Ratio, etc.  It can be found here:  "Calculators for 1/4-Mile ET & MPH vs. HP and Weight" http://www.stealth316.com/2-calc-hp-et-mph.htm
+---
