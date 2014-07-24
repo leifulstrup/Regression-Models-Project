@@ -1,0 +1,66 @@
+---
+title: "Regression-Project-July2014-leifulstrup"
+author: "Leif Ulstrup"
+date: "July 22, 2014"
+output: html_document
+---
+
+##Executive Summary
+
+
+
+##Introduction
+
+Our project assignment for this class (Regression Models at Johns Hopkins U via Coursera - July 2014) is to assume we work for Motor Trend Magazine and are asked to use data from a 1974 Motor Trend magazine survey of car performance for 32 automobiles to answer two questions.  The information about this data source "mtcars" can be found here:  http://stat.ethz.ch/R-manual/R-devel/library/datasets/html/mtcars.html
+
+The question are:
+(1) Is an automatic or manual transmission better for MPG?
+(2) Quantify the MPG difference between automatic and manual transmissions?
+
+##Exploratory Data Analysis
+
+Source of Empirical Data:
+"Calculators for 1/4-Mile ET & MPH vs. HP and Weight" http://www.stealth316.com/2-calc-hp-et-mph.htm
+
+```{r eda, echo=TRUE}
+require(car)
+require(graphics)
+
+# do basic analysis on the data set
+autoMeanMPG <- mean(mtcars[mtcars$am == 0,]$mpg)  # am=0 automatic transmission
+autosdMPG <- sd(mtcars[mtcars$am == 0,]$mpg)  # am=0 automatic transmission
+nauto <- nrow(mtcars[mtcars$am == 0,])
+
+manualMeanMPG <- mean(mtcars[mtcars$am == 1,]$mpg)  # am=1 automatic transmission
+manualsdMPG <- sd(mtcars[mtcars$am == 1,]$mpg)   # am=1 automatic transmission
+nmanual <- nrow(mtcars[mtcars$am == 1,])
+
+print(paste("Automatic Transmission - Mean MPG:", round(autoMeanMPG, digits =3)))
+
+
+pairs(mtcars, main = "mtcars data")
+scatterplot(mpg ~ wt | am, data=mtcars, xlab="Weight (lb/1000)", ylab="Miles Per Gallon", main="MPG vs Weight\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+
+scatterplot(mpg ~ hp | am, data=mtcars, xlab="Horsepower", ylab="Miles Per Gallon", main="MPG vs HP\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+
+scatterplot(hp ~ wt | am, data=mtcars, xlab="Weight (lb/1000)", ylab="Horsepower", main="HP vs Weight\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+
+scatterplot(qsec ~ hp | am, data=mtcars, xlab="Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs HP\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+
+mtcars$powerRatio <- mtcars$wt*1000/mtcars$hp
+
+scatterplot(qsec ~ powerRatio | am, data=mtcars, xlab="Weight (lbs)/Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs Power Ratio\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+
+
+#
+# Using external sources for reference to compare to a larger body of car performance data
+# using data from "Calculators for 1/4-Mile ET & MPH vs. HP and Weight" http://www.stealth316.com/2-calc-hp-et-mph.htm
+
+mtcars$MPHestimate <- 215.39*(mtcars$hp/(mtcars$wt*1000))^(0.3018)
+mtcars$QuarterMileTimeEstimate <- 7.3571*((mtcars$wt*1000)/mtcars$hp)^(0.2574)
+mtcars$HPestimate <- (mtcars$wt*1000)/(mtcars$qsec/7.3571)^3.885
+mtcars$HPestimateToActualHPRatio <- mtcars$HPestimate/mtcars$hp
+
+```
+
+##Conclusions
