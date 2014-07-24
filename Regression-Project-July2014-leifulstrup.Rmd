@@ -1,5 +1,5 @@
 ---
-title: "Regression-Project-July2014-leifulstrup"
+title: "Regression Models Class Project (JHU via Coursera) - July 2014"
 author: "Leif Ulstrup"
 date: "July 22, 2014"
 output: html_document
@@ -13,17 +13,42 @@ output: html_document
 
 Our project assignment for this class (Regression Models at Johns Hopkins U via Coursera - July 2014) is to assume we work for Motor Trend Magazine and are asked to use data from a 1974 Motor Trend magazine survey of car performance for 32 automobiles to answer two questions.  The information about this data source "mtcars" can be found here:  http://stat.ethz.ch/R-manual/R-devel/library/datasets/html/mtcars.html
 
-The question are:
-(1) Is an automatic or manual transmission better for MPG?
+####The questions are:
+(1) Is an automatic or manual transmission better for MPG (miles per gallon)?
 (2) Quantify the MPG difference between automatic and manual transmissions?
+
+The challenge in answering these questions is that the data do NOT include automatic AND manual transmission versions of the same cars for comparison.  Solely using the data in the mtcars data set to answer this question by trying to normalize the physical characteristics such as weight, horsepower, acceleration, cylinders, etc and then testing for differences in MPG for automatic vs. manual transmissions will likely have a low confidence factor.
+
+Given the performance factors that are in the input data set "mtcars" are ultimately governed by physics (Newton's Laws), car designer engineering tradeoffs, and how the car was driven in testing, one can refer to the physics that drive the major factors in MPG performance to think through ways to normalize the physical characteristics in answering the question.  Per this reference:
+
+These primary physics factors are:
+
+(1) engine efficiency in converting the energy in a gallon of gasoline into power,
+(2) mechanical losses to heat due to inefficiencies in the power transmission to the tires,
+(3) rolling friction losses (these are function of the weight of the car and coefficient of rolling friction of the tires), and, most importantly at high speeds (>50mph),
+(4) drag on the car where the power (energy/unit time) required to overcome 
+
+drag = (1/2)*(fluid density of air)*(front surface "drag area" of the car)*(drag coefficient of the car body)* velocity^3
+
+If one assumes that the test driving for the mtcars data approximated the same velocities, then the major difference in energy consumption is based on the front surface of the car * the car's drag coefficient.
+
+The drag area and drag coefficients can vary by multiples and create major differences in fuel economy per this reference and these tables:  http://en.wikipedia.org/wiki/Automobile_drag_coefficient.
+
+The exploratory data analysis below explores the relationship between MPG and transmission type by first exploring the relationships between MPG and Weight, MPG and Horsepower (HP), Quarter Mile time vs HP, and Quarter Mile time vs Power Ratio (Weight/HP).  In each case the data are plotted noted whether the car has an automatic (am=0) or manual transmission (am=1).  The analysis shows a number of differences between the automatic and manual car performance but also a number of overlaps in physical parameters where the data show little variaion between the two types of transmissions.  
+
+The most striking diagram "MPG vs HP" seems to show that manual transmission cars are on a trend line of ~4 MPG superior performance when horsepower is the assumed driver.
+
+The 13 of 32 manual transmission cars average 24.39 mpg (with a standard deviation of 6.17) vs the automatics which are 19 of 32 cars and average 17.15 mpg (with a standard deviation of 3.834); however, it is also easy to see on the MPG vs Weight chart that the majority of the manual transmission cars are the much lighter cars.  11 of the 13 manual transmission cars are below 3000 lbs while only 1 of the 19 automatic cars is below 3000 lbs.  The MPG vs Weight trend lines would lead one to the conclusion that manual transmissions have much worse mpg than automatic for cars above 3000 lbs but again there are only 2 of 13 data points in that region.
+
+
 
 ##Exploratory Data Analysis
 
-Source of Empirical Data:
-"Calculators for 1/4-Mile ET & MPH vs. HP and Weight" http://www.stealth316.com/2-calc-hp-et-mph.htm
 
 ```{r eda, echo=TRUE}
-require(car)
+
+require(car) # this package includes the function scatterplot() which is useful for the visuals below
+
 require(graphics)
 
 # do basic analysis on the data set
@@ -37,8 +62,10 @@ nmanual <- nrow(mtcars[mtcars$am == 1,])
 
 print(paste("Automatic Transmission - Mean MPG:", round(autoMeanMPG, digits =3)))
 
-
+# do a quick check of the relationships using the pairs() function to display
 pairs(mtcars, main = "mtcars data")
+
+# dive in and start looking at relationships visually
 scatterplot(mpg ~ wt | am, data=mtcars, xlab="Weight (lb/1000)", ylab="Miles Per Gallon", main="MPG vs Weight\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
 
 scatterplot(mpg ~ hp | am, data=mtcars, xlab="Horsepower", ylab="Miles Per Gallon", main="MPG vs HP\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
@@ -49,7 +76,7 @@ scatterplot(qsec ~ hp | am, data=mtcars, xlab="Horsepower", ylab="Seconds to Qua
 
 mtcars$powerRatio <- mtcars$wt*1000/mtcars$hp
 
-scatterplot(qsec ~ powerRatio | am, data=mtcars, xlab="Weight (lbs)/Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs Power Ratio\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=FALSE)
+scatterplot(qsec ~ powerRatio | am, data=mtcars, xlab="Weight (lbs)/Horsepower", ylab="Seconds to Quarter Mile", main="Quarter Mile Time vs Power Ratio\n 1974 Motor Trend US magazine\n (0: automatic transmission, 1: manual transmission)", labels=row.names(mtcars), legend.coords="topright", smoother=TRUE)
 
 
 #
@@ -64,3 +91,11 @@ mtcars$HPestimateToActualHPRatio <- mtcars$HPestimate/mtcars$hp
 ```
 
 ##Conclusions
+
+
+
+####For Fun - Analysis of This Question Using Modern Car Capabilities
+
+This question about whether manual or automatic transmissions provide superior MPG and other advantages continues to this day.  Most car analysts suggest that very sophisticated modern day automatic transmissions (especially "continuous variable") are as good are even better than manual transmissions for fuel economy.  There is a funny version of this discussion with the famous "Frick and Frack Brothers Car Talk Series on NPR" dated 8/21/12 and located here: http://www.cartalk.com/content/today-manual-transmission-myths-debunked .  Here is another source that shows that it is a toss up also though the title indicates otherwise:  http://www.consumerreports.org/cro/2012/01/save-gas-and-money-with-a-manual-transmission/index.htm
+
+Here is another reference exploring statistical analysis of a broad range of automobile performance chracteristics starting with regressiona analysis from the 1950's to today.  The analysis does not explore the automatic vs. manual discussion but does look at the ratios between quarter mile time, quarter mile MPH, weight, horsepower, Power Ratio, etc.  It can be found here:  "Calculators for 1/4-Mile ET & MPH vs. HP and Weight" http://www.stealth316.com/2-calc-hp-et-mph.htm
